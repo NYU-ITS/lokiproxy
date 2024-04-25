@@ -208,7 +208,7 @@ func main() {
 		err = server.ListenAndServeTLS(serverCertificate[0], serverCertificate[1])
 	}
 	if !errors.Is(err, http.ErrServerClosed) {
-		log.Fatal(server.ListenAndServe())
+		log.Fatal(err)
 	}
 }
 
