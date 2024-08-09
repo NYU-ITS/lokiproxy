@@ -1,6 +1,6 @@
 module github.com/remram44/lokiproxy
 
-go 1.21.4
+go 1.22.0
 
 require (
 	github.com/coreos/go-oidc/v3 v3.9.0 // indirect
