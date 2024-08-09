@@ -185,6 +185,7 @@ func main() {
 
 	// Set up routes
 	mux := http.NewServeMux()
+	mux.HandleFunc("/", handle404)
 	mux.HandleFunc("/loki/api/v1/query", handleQuery)
 	mux.HandleFunc("/loki/api/v1/query_range", handleQueryRange)
 	mux.HandleFunc("/loki/api/v1/series", handleSeries)
@@ -306,6 +307,11 @@ func respondWithProxy(
 	res.Header()["Content-Type"] = proxyRes.Header["Content-Type"]
 	res.WriteHeader(proxyRes.StatusCode)
 	io.Copy(res, proxyRes.Body)
+}
+
+func handle404(res http.ResponseWriter, req *http.Request) {
+	res.WriteHeader(404)
+	log.Printf("404: %s %s", req.Method, req.URL.Path)
 }
 
 func handleQuery(res http.ResponseWriter, req *http.Request) {
