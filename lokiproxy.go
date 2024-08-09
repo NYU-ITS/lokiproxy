@@ -34,7 +34,8 @@ import (
 // GET /loki/api/v1/labels
 //   query params to pass: start, end, since
 // GET /loki/api/v1/label/<name>/values
-//   block?
+//   query params to change/add: query
+//	 query params to pass: start, end, since
 // GET /loki/api/v1/index/stats
 //   query params to change: query
 //   query params to pass: start, end
@@ -504,9 +505,56 @@ func handleLabels(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func handleLabelValues(res http.ResponseWriter, _ *http.Request) {
-	res.WriteHeader(403)
-	io.WriteString(res, "label values API is disabled")
+func handleLabelValues(res http.ResponseWriter, req *http.Request) {
+	if req.Method == "GET" {
+		if err := req.ParseForm(); err != nil {
+			sendError(res, "invalid form data")
+			return
+		}
+
+		var query string
+		if len(req.Form["query"]) == 1 {
+			query = req.Form["query"][0]
+		} else if len(req.Form["query"]) == 0 {
+			// No query is acceptable, treat as {} if we need to add labels
+		} else {
+			sendError(res, "only one query expected")
+			return
+		}
+
+		// Find user, get required labels
+		requiredLabels, ok := getRequiredLabelsForUser(res, req)
+		if !ok {
+			return
+		}
+
+		// Rewrite query
+		if len(query) > 0 || len(requiredLabels) > 0 {
+			if len(query) == 0 {
+				query = "{}"
+			}
+			var err error
+			query, err = parser.ProcessQuery(query, requiredLabels)
+			if err != nil {
+				sendError(res, fmt.Sprintf("error parsing query: %s", err))
+				return
+			}
+		}
+
+		// Proxy
+		respondWithProxy(
+			fmt.Sprintf("/loki/api/v1/label/%s/values", req.PathValue("label")),
+			req.Form,
+			res,
+			map[string][]string{"query": []string{query}},
+			[]string{"start", "end"},
+			req.Context(),
+		)
+	} else {
+		log.Printf("got %s to label values", req.Method)
+		sendError(res, "use method GET")
+		return
+	}
 }
 
 func handleIndexStats(res http.ResponseWriter, req *http.Request) {
