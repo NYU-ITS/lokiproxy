@@ -8,7 +8,7 @@ all: dist
 
 .PHONY: test
 test:
-	go test -v ./...
+	go test -race -v ./...
 
 .PHONY: dist linux-amd64 darwin linux-armv7 linux-arm64 windows-amd64
 dist: linux-amd64 darwin linux-armv7 linux-arm64 windows-amd64
