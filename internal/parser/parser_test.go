@@ -124,7 +124,9 @@ func TestInternal(t *testing.T) {
 			pos:   3,
 			query: "a=\"a long \\\"string\" here",
 		}
-		parser.consumeString()
+		if _, err := parser.consumeString(); err != nil {
+			t.Fatal(err)
+		}
 		if parser.pos != 19 {
 			t.Fatalf("end of string: %d, expected %d", parser.pos, 19)
 		}

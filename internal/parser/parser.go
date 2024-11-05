@@ -30,7 +30,9 @@ func (p *queryParser) parse() error {
 		case c == '{':
 			p.result.WriteByte(c)
 			p.pos += 1
-			p.consumeSelectors()
+			if err := p.consumeSelectors(); err != nil {
+				return err
+			}
 		case (c == '[' || c == '(') ||
 			(c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' ||
 			c == '=' || c == '<' || c == '>' || c == '!' ||

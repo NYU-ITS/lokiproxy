@@ -307,7 +307,7 @@ func respondWithProxy(
 	// Send response
 	res.Header()["Content-Type"] = proxyRes.Header["Content-Type"]
 	res.WriteHeader(proxyRes.StatusCode)
-	io.Copy(res, proxyRes.Body)
+	_, _ = io.Copy(res, proxyRes.Body)
 }
 
 func handle404(res http.ResponseWriter, req *http.Request) {
