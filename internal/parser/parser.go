@@ -19,27 +19,27 @@ type queryParser struct {
 	requiredLabels map[string]interface{}
 }
 
-func (self *queryParser) parse() error {
+func (p *queryParser) parse() error {
 	for {
-		self.consumeWhiteSpace()
-		if self.pos >= len(self.query) {
+		p.consumeWhiteSpace()
+		if p.pos >= len(p.query) {
 			return nil
 		}
-		c := self.query[self.pos]
+		c := p.query[p.pos]
 		switch {
 		case c == '{':
-			self.result.WriteByte(c)
-			self.pos += 1
-			self.consumeSelectors()
+			p.result.WriteByte(c)
+			p.pos += 1
+			p.consumeSelectors()
 		case (c == '[' || c == '(') ||
 			(c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' ||
 			c == '=' || c == '<' || c == '>' || c == '!' ||
 			c >= '0' || c <= '9':
-			self.result.WriteByte(c)
-			self.pos += 1
+			p.result.WriteByte(c)
+			p.pos += 1
 		case c == '"':
-			self.pos += 1
-			if _, err := self.consumeString(); err != nil {
+			p.pos += 1
+			if _, err := p.consumeString(); err != nil {
 				return err
 			}
 		default:
@@ -48,83 +48,83 @@ func (self *queryParser) parse() error {
 	}
 }
 
-func (self *queryParser) consumeWhiteSpace() {
-	for self.pos < len(self.query) && isWhiteSpace(self.query[self.pos]) {
-		self.result.WriteByte(self.query[self.pos])
-		self.pos += 1
+func (p *queryParser) consumeWhiteSpace() {
+	for p.pos < len(p.query) && isWhiteSpace(p.query[p.pos]) {
+		p.result.WriteByte(p.query[p.pos])
+		p.pos += 1
 	}
 }
 
-func (self *queryParser) consumeString() (string, error) {
-	start := self.pos - 1
-	for self.pos < len(self.query) {
-		c := self.query[self.pos]
-		self.result.WriteByte(c)
+func (p *queryParser) consumeString() (string, error) {
+	start := p.pos - 1
+	for p.pos < len(p.query) {
+		c := p.query[p.pos]
+		p.result.WriteByte(c)
 		switch c {
 		case '"':
-			self.pos += 1
-			return self.query[start:self.pos], nil
+			p.pos += 1
+			return p.query[start:p.pos], nil
 		case '\\':
-			self.pos += 1
-			if self.pos >= len(self.query) {
+			p.pos += 1
+			if p.pos >= len(p.query) {
 				return "", fmt.Errorf("missing closing string delimiter")
 			}
-			self.result.WriteByte(self.query[self.pos])
+			p.result.WriteByte(p.query[p.pos])
 		}
-		self.pos += 1
+		p.pos += 1
 	}
 	return "", fmt.Errorf("missing closing string delimiter")
 }
 
-func (self *queryParser) consumeIdentifier() string {
-	start := self.pos
-	for self.pos < len(self.query) {
-		c := self.query[self.pos]
-		if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' || (self.pos > start && c >= '0' && c <= '9') {
-			self.result.WriteByte(c)
-			self.pos += 1
+func (p *queryParser) consumeIdentifier() string {
+	start := p.pos
+	for p.pos < len(p.query) {
+		c := p.query[p.pos]
+		if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' || (p.pos > start && c >= '0' && c <= '9') {
+			p.result.WriteByte(c)
+			p.pos += 1
 		} else {
 			break
 		}
 	}
-	return self.query[start:self.pos]
+	return p.query[start:p.pos]
 }
 
-func (self *queryParser) consumeSelectors() error {
-	missingLabels := maps.Clone(self.requiredLabels)
+func (p *queryParser) consumeSelectors() error {
+	missingLabels := maps.Clone(p.requiredLabels)
 	insertComma := false
-	for self.pos < len(self.query) {
-		c := self.query[self.pos]
+	for p.pos < len(p.query) {
+		c := p.query[p.pos]
 		if c == '}' {
 			for label := range missingLabels {
 				if insertComma {
-					self.result.WriteString(", ")
+					p.result.WriteString(", ")
 				}
-				self.result.WriteString(label)
+				p.result.WriteString(label)
 				insertComma = true
 			}
-			self.result.WriteByte('}')
-			self.pos += 1
+			p.result.WriteByte('}')
+			p.pos += 1
 			return nil
 		} else if c == ',' || c == ' ' {
-			self.result.WriteByte(c)
-			self.pos += 1
+			p.result.WriteByte(c)
+			p.pos += 1
 		} else if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' {
 			var label strings.Builder
-			label.WriteString(self.consumeIdentifier())
-			self.consumeWhiteSpace()
-			if self.pos >= len(self.query) {
+			label.WriteString(p.consumeIdentifier())
+			p.consumeWhiteSpace()
+			if p.pos >= len(p.query) {
 				return fmt.Errorf("missing selector operator")
 			}
-			for self.pos < len(self.query) {
-				c := self.query[self.pos]
-				self.result.WriteByte(c)
-				self.pos += 1
+			for p.pos < len(p.query) {
+				c := p.query[p.pos]
+				p.result.WriteByte(c)
+				p.pos += 1
 				if isWhiteSpace(c) {
 					continue
 				}
 				if c == '"' {
-					s, err := self.consumeString()
+					s, err := p.consumeString()
 					if err != nil {
 						return err
 					}

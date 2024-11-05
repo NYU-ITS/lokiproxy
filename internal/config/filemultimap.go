@@ -87,7 +87,7 @@ func NewFileMultiMap(filename string, ctxCancel context.CancelFunc) (*FileMultiM
 	return res, nil
 }
 
-func (self *FileMultiMap) Get(key string) (map[string]interface{}, bool) {
-	res, ok := (*self.data.Load())[key]
+func (m *FileMultiMap) Get(key string) (map[string]interface{}, bool) {
+	res, ok := (*m.data.Load())[key]
 	return res, ok
 }
