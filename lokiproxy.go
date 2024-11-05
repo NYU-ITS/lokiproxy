@@ -214,11 +214,6 @@ func main() {
 	}
 }
 
-func sendError(res http.ResponseWriter, message string) {
-	res.WriteHeader(400)
-	io.WriteString(res, message)
-}
-
 func makeProxyUrl(path string) url.URL {
 	r := lokiUrl
 	r.Path = path
@@ -236,15 +231,13 @@ func getRequiredLabelsForUser(res http.ResponseWriter, req *http.Request) (map[s
 				return make(map[string]interface{}), true
 			}
 		}
-		res.WriteHeader(410)
-		io.WriteString(res, "missing ID token")
+		http.Error(res, "missing ID token", 410)
 		return nil, false
 	}
 	idToken, err := oidcVerifier.Verify(req.Context(), idTokens[0])
 	if err != nil {
 		log.Print("invalid ID token")
-		res.WriteHeader(410)
-		io.WriteString(res, "invalid ID token")
+		http.Error(res, "invalid ID token", 410)
 		return nil, false
 	}
 	log.Printf("id token: %#v", idToken.Subject)
@@ -253,8 +246,7 @@ func getRequiredLabelsForUser(res http.ResponseWriter, req *http.Request) (map[s
 	requiredLabels, ok := identityMap.Get(idToken.Subject)
 	if !ok {
 		log.Printf("request from unknown user %s", idToken.Subject)
-		res.WriteHeader(403)
-		io.WriteString(res, "unknown user")
+		http.Error(res, "unknown user", 403)
 		return nil, false
 	}
 
@@ -291,16 +283,14 @@ func respondWithProxy(
 		nil,
 	)
 	if err != nil {
-		res.WriteHeader(500)
-		io.WriteString(res, "internal error")
 		log.Printf("error creating proxy request: %s", err)
+		http.Error(res, "internal error", 500)
 		return
 	}
 	proxyRes, err := proxyClient.Do(proxyReq)
 	if err != nil {
-		res.WriteHeader(503)
-		io.WriteString(res, "internal error")
 		log.Printf("error sending proxy request: %s", err)
+		http.Error(res, "internal error", 503)
 		return
 	}
 
@@ -311,19 +301,19 @@ func respondWithProxy(
 }
 
 func handle404(res http.ResponseWriter, req *http.Request) {
-	res.WriteHeader(404)
 	log.Printf("404: %s %s", req.Method, req.URL.Path)
+	http.Error(res, "Not found", 404)
 }
 
 func handleQuery(res http.ResponseWriter, req *http.Request) {
 	if req.Method == "GET" {
 		if err := req.ParseForm(); err != nil {
-			sendError(res, "invalid form data")
+			http.Error(res, "invalid form data", 400)
 			return
 		}
 
 		if len(req.Form["query"]) != 1 {
-			sendError(res, "one query expected")
+			http.Error(res, "one query expected", 400)
 			return
 		}
 		query := req.Form["query"][0]
@@ -337,7 +327,7 @@ func handleQuery(res http.ResponseWriter, req *http.Request) {
 		// Rewrite query
 		query, err := parser.ProcessQuery(query, requiredLabels)
 		if err != nil {
-			sendError(res, fmt.Sprintf("error parsing query: %s", err))
+			http.Error(res, fmt.Sprintf("error parsing query: %s", err), 400)
 			return
 		}
 
@@ -352,7 +342,7 @@ func handleQuery(res http.ResponseWriter, req *http.Request) {
 		)
 	} else {
 		log.Printf("got %s to query", req.Method)
-		sendError(res, "use method GET")
+		http.Error(res, "use method GET", 400)
 		return
 	}
 }
@@ -360,12 +350,12 @@ func handleQuery(res http.ResponseWriter, req *http.Request) {
 func handleQueryRange(res http.ResponseWriter, req *http.Request) {
 	if req.Method == "GET" {
 		if err := req.ParseForm(); err != nil {
-			sendError(res, "invalid form data")
+			http.Error(res, "invalid form data", 400)
 			return
 		}
 
 		if len(req.Form["query"]) != 1 {
-			sendError(res, "one query expected")
+			http.Error(res, "one query expected", 400)
 			return
 		}
 		query := req.Form["query"][0]
@@ -379,7 +369,7 @@ func handleQueryRange(res http.ResponseWriter, req *http.Request) {
 		// Rewrite query
 		query, err := parser.ProcessQuery(query, requiredLabels)
 		if err != nil {
-			sendError(res, fmt.Sprintf("error parsing query: %s", err))
+			http.Error(res, fmt.Sprintf("error parsing query: %s", err), 400)
 			return
 		}
 
@@ -394,7 +384,7 @@ func handleQueryRange(res http.ResponseWriter, req *http.Request) {
 		)
 	} else {
 		log.Printf("got %s to query_range", req.Method)
-		sendError(res, "use method GET")
+		http.Error(res, "use method GET", 400)
 		return
 	}
 }
@@ -402,7 +392,7 @@ func handleQueryRange(res http.ResponseWriter, req *http.Request) {
 func handleSeries(res http.ResponseWriter, req *http.Request) {
 	if req.Method == "GET" || req.Method == "POST" {
 		if err := req.ParseForm(); err != nil {
-			sendError(res, "invalid form data")
+			http.Error(res, "invalid form data", 400)
 			return
 		}
 
@@ -419,7 +409,7 @@ func handleSeries(res http.ResponseWriter, req *http.Request) {
 			var err error
 			queries[key], err = parser.ProcessQuery(queries[key], requiredLabels)
 			if err != nil {
-				sendError(res, fmt.Sprintf("error parsing query: %s", err))
+				http.Error(res, fmt.Sprintf("error parsing query: %s", err), 400)
 				return
 			}
 		}
@@ -435,7 +425,7 @@ func handleSeries(res http.ResponseWriter, req *http.Request) {
 		)
 	} else {
 		log.Printf("got %s to series", req.Method)
-		sendError(res, "use methods GET or POST")
+		http.Error(res, "use methods GET or POST", 400)
 		return
 	}
 }
@@ -443,12 +433,12 @@ func handleSeries(res http.ResponseWriter, req *http.Request) {
 func handleTail(res http.ResponseWriter, req *http.Request) {
 	if req.Method == "GET" {
 		if err := req.ParseForm(); err != nil {
-			sendError(res, "invalid form data")
+			http.Error(res, "invalid form data", 400)
 			return
 		}
 
 		if len(req.Form["query"]) != 1 {
-			sendError(res, "one query expected")
+			http.Error(res, "one query expected", 400)
 			return
 		}
 		query := req.Form["query"][0]
@@ -462,7 +452,7 @@ func handleTail(res http.ResponseWriter, req *http.Request) {
 		// Rewrite query
 		query, err := parser.ProcessQuery(query, requiredLabels)
 		if err != nil {
-			sendError(res, fmt.Sprintf("error parsing query: %s", err))
+			http.Error(res, fmt.Sprintf("error parsing query: %s", err), 400)
 			return
 		}
 
@@ -477,7 +467,7 @@ func handleTail(res http.ResponseWriter, req *http.Request) {
 		)
 	} else {
 		log.Printf("got %s to tail", req.Method)
-		sendError(res, "use method GET")
+		http.Error(res, "use method GET", 400)
 		return
 	}
 }
@@ -485,7 +475,7 @@ func handleTail(res http.ResponseWriter, req *http.Request) {
 func handleLabels(res http.ResponseWriter, req *http.Request) {
 	if req.Method == "GET" {
 		if err := req.ParseForm(); err != nil {
-			sendError(res, "invalid form data")
+			http.Error(res, "invalid form data", 400)
 			return
 		}
 
@@ -500,7 +490,7 @@ func handleLabels(res http.ResponseWriter, req *http.Request) {
 		)
 	} else {
 		log.Printf("got %s to labels", req.Method)
-		sendError(res, "use method GET")
+		http.Error(res, "use method GET", 400)
 		return
 	}
 }
@@ -508,7 +498,7 @@ func handleLabels(res http.ResponseWriter, req *http.Request) {
 func handleLabelValues(res http.ResponseWriter, req *http.Request) {
 	if req.Method == "GET" {
 		if err := req.ParseForm(); err != nil {
-			sendError(res, "invalid form data")
+			http.Error(res, "invalid form data", 400)
 			return
 		}
 
@@ -518,7 +508,7 @@ func handleLabelValues(res http.ResponseWriter, req *http.Request) {
 		} else if len(req.Form["query"]) == 0 {
 			// No query is acceptable, treat as {} if we need to add labels
 		} else {
-			sendError(res, "only one query expected")
+			http.Error(res, "only one query expected", 400)
 			return
 		}
 
@@ -536,7 +526,7 @@ func handleLabelValues(res http.ResponseWriter, req *http.Request) {
 			var err error
 			query, err = parser.ProcessQuery(query, requiredLabels)
 			if err != nil {
-				sendError(res, fmt.Sprintf("error parsing query: %s", err))
+				http.Error(res, fmt.Sprintf("error parsing query: %s", err), 400)
 				return
 			}
 		}
@@ -552,7 +542,7 @@ func handleLabelValues(res http.ResponseWriter, req *http.Request) {
 		)
 	} else {
 		log.Printf("got %s to label values", req.Method)
-		sendError(res, "use method GET")
+		http.Error(res, "use method GET", 400)
 		return
 	}
 }
@@ -560,12 +550,12 @@ func handleLabelValues(res http.ResponseWriter, req *http.Request) {
 func handleIndexStats(res http.ResponseWriter, req *http.Request) {
 	if req.Method == "GET" || req.Method == "POST" {
 		if err := req.ParseForm(); err != nil {
-			sendError(res, "invalid form data")
+			http.Error(res, "invalid form data", 400)
 			return
 		}
 
 		if len(req.Form["query"]) != 1 {
-			sendError(res, "one query expected")
+			http.Error(res, "one query expected", 400)
 			return
 		}
 		query := req.Form["query"][0]
@@ -579,7 +569,7 @@ func handleIndexStats(res http.ResponseWriter, req *http.Request) {
 		// Rewrite query
 		query, err := parser.ProcessQuery(query, requiredLabels)
 		if err != nil {
-			sendError(res, fmt.Sprintf("error parsing query: %s", err))
+			http.Error(res, fmt.Sprintf("error parsing query: %s", err), 400)
 			return
 		}
 
@@ -594,7 +584,7 @@ func handleIndexStats(res http.ResponseWriter, req *http.Request) {
 		)
 	} else {
 		log.Printf("got %s to index/stats", req.Method)
-		sendError(res, "use methods GET or POST")
+		http.Error(res, "use methods GET or POST", 400)
 		return
 	}
 }
