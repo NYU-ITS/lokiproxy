@@ -1,4 +1,4 @@
-module github.com/remram44/lokiproxy
+module github.com/nyu-its/lokiproxy
 
 go 1.22.0
 
