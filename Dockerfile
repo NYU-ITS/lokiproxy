@@ -8,4 +8,4 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=$TARGETARCH go build -tags netgo -ldflags -w
 FROM alpine:latest
 ARG TARGETARCH
 COPY --from=build /usr/src/app/bin/lokiproxy-$TARGETARCH /usr/local/bin/lokiproxy
-CMD lokiproxy
+CMD ["lokiproxy"]
