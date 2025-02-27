@@ -101,6 +101,12 @@ func TestLogQuery(t *testing.T) {
 		"{ job=\"pods\" , audit!=\"true\" , namespace=~\"yes|oui\"}",
 		twoLabels,
 	)
+	check(
+		t,
+		"{job=\"pods\"} | line_format \"{{.namespace}}\"",
+		"{job=\"pods\", namespace=~\"yes|oui\"} | line_format \"{{.namespace}}\"",
+		map[string]interface{}{"namespace=~\"yes|oui\"": nil},
+	)
 }
 
 func TestInternal(t *testing.T) {
