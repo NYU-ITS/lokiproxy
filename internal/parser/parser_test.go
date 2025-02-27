@@ -51,8 +51,8 @@ func TestLogQuery(t *testing.T) {
 	)
 	check(
 		t,
-		"{job_name=\"myapp\",namespace = \"yes\" } != ip(\"192.168.4.5-192.168.4.20\")",
-		"{job_name=\"myapp\",namespace = \"yes\" } != ip(\"192.168.4.5-192.168.4.20\")",
+		"{job_name=`myapp`,namespace = \"yes\" } != ip(\"192.168.4.5-192.168.4.20\")",
+		"{job_name=`myapp`,namespace = \"yes\" } != ip(\"192.168.4.5-192.168.4.20\")",
 		oneLabel,
 	)
 
@@ -130,7 +130,7 @@ func TestInternal(t *testing.T) {
 			pos:   3,
 			query: "a=\"a long \\\"string\" here",
 		}
-		if _, err := parser.consumeString(); err != nil {
+		if _, err := parser.consumeString('"'); err != nil {
 			t.Fatal(err)
 		}
 		if parser.pos != 19 {

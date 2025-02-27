@@ -51,10 +51,10 @@ func (p *queryParser) parse() error {
 			(c >= '0' && c <= '9'):
 			p.outputByte(c)
 			p.pos += 1
-		case c == '"':
+		case c == '"' || c == '`':
 			p.outputByte(c)
 			p.pos += 1
-			if _, err := p.consumeString(); err != nil {
+			if _, err := p.consumeString(c); err != nil {
 				return err
 			}
 		default:
@@ -70,14 +70,14 @@ func (p *queryParser) consumeWhiteSpace() {
 	}
 }
 
-func (p *queryParser) consumeString() (string, error) {
-	debugLog("consumeString() pos=%v", p.pos)
+func (p *queryParser) consumeString(delim byte) (string, error) {
+	debugLog("consumeString(%c) pos=%v", delim, p.pos)
 	start := p.pos - 1
 	for p.pos < len(p.query) {
 		c := p.query[p.pos]
 		p.outputByte(c)
 		switch c {
-		case '"':
+		case delim:
 			p.pos += 1
 			debugLog("consumeString() done pos=%v", p.pos)
 			return p.query[start:p.pos], nil
@@ -145,8 +145,8 @@ func (p *queryParser) consumeSelectors() error {
 				if isWhiteSpace(c) {
 					continue
 				}
-				if c == '"' {
-					s, err := p.consumeString()
+				if c == '"' || c == '`' {
+					s, err := p.consumeString(c)
 					if err != nil {
 						return err
 					}
