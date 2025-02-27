@@ -44,9 +44,10 @@ func (p *queryParser) parse() error {
 			if err := p.consumeSelectors(); err != nil {
 				return err
 			}
-		case (c == '[' || c == ']' || c == '(') || c == ')' ||
+		case (c == '[' || c == ']' || c == '(') || c == ')' || c == ',' ||
 			(c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' ||
-			c == '=' || c == '<' || c == '>' || c == '!' || c == '|' ||
+			c == '=' || c == '<' || c == '>' || c == '!' || c == '|' || c == ':' ||
+			c == '#' || c == '*' || c == '+' || c == '-' || c == '/' || c == '%' ||
 			(c >= '0' && c <= '9'):
 			p.outputByte(c)
 			p.pos += 1
