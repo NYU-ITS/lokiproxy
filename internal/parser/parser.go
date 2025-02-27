@@ -33,13 +33,14 @@ func (p *queryParser) parse() error {
 			if err := p.consumeSelectors(); err != nil {
 				return err
 			}
-		case (c == '[' || c == '(') ||
+		case (c == '[' || c == '(') || c == ')' ||
 			(c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' ||
-			c == '=' || c == '<' || c == '>' || c == '!' ||
-			c >= '0' || c <= '9':
+			c == '=' || c == '<' || c == '>' || c == '!' || c == '|' ||
+			(c >= '0' && c <= '9'):
 			p.result.WriteByte(c)
 			p.pos += 1
 		case c == '"':
+			p.result.WriteByte(c)
 			p.pos += 1
 			if _, err := p.consumeString(); err != nil {
 				return err
