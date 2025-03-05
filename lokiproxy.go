@@ -14,8 +14,8 @@ import (
 
 	"github.com/coreos/go-oidc/v3/oidc"
 
-	"github.com/nyu-its/lokiproxy/internal/config"
-	"github.com/nyu-its/lokiproxy/internal/parser"
+	"github.com/nyu-rts/lokiproxy/internal/config"
+	"github.com/nyu-rts/lokiproxy/internal/parser"
 )
 
 // GET /loki/api/v1/query

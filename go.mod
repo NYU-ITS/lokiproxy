@@ -1,4 +1,4 @@
-module github.com/nyu-its/lokiproxy
+module github.com/nyu-rts/lokiproxy
 
 go 1.24.0
 
