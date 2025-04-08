@@ -107,6 +107,18 @@ func TestLogQuery(t *testing.T) {
 		"{job=\"pods\", namespace=~\"yes|oui\"} | line_format \"{{.namespace}}\"",
 		map[string]interface{}{"namespace=~\"yes|oui\"": nil},
 	)
+	check(
+		t,
+		"{job=\"pods\"} | line_format \"{{.namespace}}\" # foo{bar()}",
+		"{job=\"pods\", namespace=~\"yes|oui\"} | line_format \"{{.namespace}}\" # foo{bar()}",
+		map[string]interface{}{"namespace=~\"yes|oui\"": nil},
+	)
+	check(
+		t,
+		"# test\n{job=\"pods\"}",
+		"# test\n{job=\"pods\", namespace=~\"yes|oui\"}",
+		map[string]interface{}{"namespace=~\"yes|oui\"": nil},
+	)
 }
 
 func TestInternal(t *testing.T) {

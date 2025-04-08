@@ -44,10 +44,14 @@ func (p *queryParser) parse() error {
 			if err := p.consumeSelectors(); err != nil {
 				return err
 			}
+		case c == '#':
+			p.outputByte(c)
+			p.pos += 1
+			p.consumeLine()
 		case c == '[' || c == ']' || c == '(' || c == ')' || c == ',' ||
 			(c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' ||
 			(c >= '0' && c <= '9') || c == '=' || c == '<' || c == '>' ||
-			c == '!' || c == '|' || c == ':' || c == '#' || c == '*' ||
+			c == '!' || c == '|' || c == ':' || c == '*' ||
 			c == '+' || c == '-' || c == '/' || c == '%' || c == '~':
 			p.outputByte(c)
 			p.pos += 1
@@ -66,6 +70,26 @@ func (p *queryParser) parse() error {
 func (p *queryParser) consumeWhiteSpace() {
 	for p.pos < len(p.query) && isWhiteSpace(p.query[p.pos]) {
 		p.outputByte(p.query[p.pos])
+		p.pos += 1
+	}
+}
+
+func (p *queryParser) consumeLine() {
+	for p.pos < len(p.query) {
+		c := p.query[p.pos]
+		p.outputByte(c)
+		p.pos += 1
+		if c == '\r' || c == '\n' {
+			break
+		}
+	}
+
+	for p.pos < len(p.query) {
+		c := p.query[p.pos]
+		if c != '\r' && c != '\n' {
+			break
+		}
+		p.outputByte(c)
 		p.pos += 1
 	}
 }
