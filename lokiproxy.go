@@ -120,7 +120,7 @@ func main() {
 				rootCAs = x509.NewCertPool()
 				rootCAs.AppendCertsFromPEM(pem)
 				serverTLSConfig = &tls.Config{
-					ClientCAs: rootCAs,
+					ClientCAs:  rootCAs,
 					ClientAuth: tls.RequireAndVerifyClientCert,
 				}
 				log.Printf("frontend CA loaded")
@@ -197,8 +197,8 @@ func main() {
 
 	// Create HTTP server
 	server := http.Server{
-		Addr:    listenAddr,
-		Handler: mux,
+		Addr:      listenAddr,
+		Handler:   mux,
 		TLSConfig: serverTLSConfig,
 	}
 	context.AfterFunc(ctx, func() { server.Close() })
