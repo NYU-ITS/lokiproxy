@@ -236,7 +236,7 @@ func getRequiredLabelsForUser(res http.ResponseWriter, req *http.Request) (map[s
 	}
 	idToken, err := oidcVerifier.Verify(req.Context(), idTokens[0])
 	if err != nil {
-		log.Print("invalid ID token")
+		log.Print("invalid ID token", err)
 		http.Error(res, "invalid ID token", 410)
 		return nil, false
 	}
